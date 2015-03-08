@@ -27,6 +27,38 @@ Meteor.publishComposite("sparks:byChannel", function (channel, limit) {
     };
 });
 
+Meteor.publishComposite("sparks:byId", function (sparkId) {
+    check(sparkId, String);
+    return {
+        find: function () {
+            return Sparks.find({
+                _id: sparkId
+            });
+        },
+        children: [{
+            find: function (spark) {
+                return Flames.find({
+                    sparkId: spark._id
+                });
+            },
+            children: [{
+                find: function (flame, spark) {
+                    return Meteor.users.find({
+                        _id: {
+                            $in: [flame.userId, spark.userId]
+                        }
+                    }, {
+                        limit: 1,
+                        fields: {
+                            profile: 1
+                        }
+                    });
+                }
+            }]
+        }]
+    };
+});
+
 Meteor.publish("sparks:flamesCount", function (sparkId) {
     check(sparkId, String);
     var self = this;
